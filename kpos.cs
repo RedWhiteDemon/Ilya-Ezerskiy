@@ -20,10 +20,10 @@ namespace GeneticsProject
         static void Main(string[] args)
         {
             
-            ReadGeneticData("sequences.txt");
+            ReadGeneticData("sequences.0.txt");
 
             
-            ReadHandleCommands("commands.txt");
+            ReadHandleCommands("commands.0.txt");
         }
 
         static void ReadGeneticData(string filename)
@@ -53,9 +53,9 @@ namespace GeneticsProject
             using (StreamReader reader = new StreamReader(filename))
             {
                 int operationNumber = 1;
-                using (StreamWriter writer = new StreamWriter("genedata.txt"))
+                using (StreamWriter writer = new StreamWriter("genedata.0.txt"))
                 {
-                    writer.WriteLine("Ваше Имя");
+                    writer.WriteLine("Езерский Илья");
                     writer.WriteLine("Генетический поиск");
 
                     while (!reader.EndOfStream)
