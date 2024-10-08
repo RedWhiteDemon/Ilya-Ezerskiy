@@ -4,9 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace GeneticsProject
+namespace GenPro
 {
-    public struct GeneticData
+    public struct GeneData
     {
         public string protein; // название белка
         public string organism; // название организма
@@ -15,18 +15,18 @@ namespace GeneticsProject
 
     class Program
     {
-        static List<GeneticData> data = new List<GeneticData>();
+        static List<GeneData> data = new List<GeneData>();
 
         static void Main(string[] args)
         {
             
-            ReadGeneticData("sequences.0.txt");
+            RGeneData("sequences.0.txt");
 
             
-            ReadHandleCommands("commands.0.txt");
+            RHComm("commands.0.txt");
         }
 
-        static void ReadGeneticData(string filename)
+        static void RGeneData(string filename)
         {
             using (StreamReader reader = new StreamReader(filename))
             {
@@ -36,7 +36,7 @@ namespace GeneticsProject
                     string[] fragments = line.Split('\t');
                     if (fragments.Length == 3)
                     {
-                        GeneticData protein = new GeneticData
+                        GeneData protein = new GeneData
                         {
                             protein = fragments[0],
                             organism = fragments[1],
@@ -48,7 +48,7 @@ namespace GeneticsProject
             }
         }
 
-        static void ReadHandleCommands(string filename)
+        static void RHComm(string filename)
         {
             using (StreamReader reader = new StreamReader(filename))
             {
@@ -68,13 +68,13 @@ namespace GeneticsProject
                         switch (op)
                         {
                             case "search":
-                                result = HandleSearch(command[1]);
+                                result = HSearch(command[1]);
                                 break;
                             case "diff":
-                                result = HandleDiff(command[1], command[2]);
+                                result = HDiff(command[1], command[2]);
                                 break;
                             case "mode":
-                                result = HandleMode(command[1]);
+                                result = HMode(command[1]);
                                 break;
                         }
 
@@ -88,9 +88,9 @@ namespace GeneticsProject
             }
         }
 
-        static string HandleSearch(string amino_acid)
+        static string HSearch(string amino_acid)
         {
-            string decoded = RLDecoding(amino_acid);
+            string decoded = RLD(amino_acid);
             var results = data.Where(d => d.amino_acids.Contains(decoded)).ToList();
             
             if (results.Count == 0)
@@ -99,7 +99,7 @@ namespace GeneticsProject
             return string.Join(Environment.NewLine, results.Select(d => $"{d.organism}    {d.protein}"));
         }
 
-        static string HandleDiff(string protein1Name, string protein2Name)
+        static string HDiff(string protein1Name, string protein2Name)
         {
             var protein1 = data.FirstOrDefault(d => d.protein == protein1Name);
             var protein2 = data.FirstOrDefault(d => d.protein == protein2Name);
@@ -113,8 +113,8 @@ namespace GeneticsProject
                 return $"MISSING: {string.Join(", ", missing)}";
             }
 
-            string seq1 = RLDecoding(protein1.amino_acids);
-            string seq2 = RLDecoding(protein2.amino_acids);
+            string seq1 = RLD(protein1.amino_acids);
+            string seq2 = RLD(protein2.amino_acids);
 
             int length = Math.Max(seq1.Length, seq2.Length);
             int diffCount = 0;
@@ -130,14 +130,14 @@ namespace GeneticsProject
             return $"amino-acids difference: {diffCount}";
         }
 
-        static string HandleMode(string proteinName)
+        static string HMode(string proteinName)
         {
             var protein = data.FirstOrDefault(d => d.protein == proteinName);
 
             if (protein.protein == null)
                 return $"MISSING: {proteinName}";
 
-            string sequence = RLDecoding(protein.amino_acids);
+            string sequence = RLD(protein.amino_acids);
             var counts = new Dictionary<char, int>();
 
             foreach (char amino in sequence)
@@ -156,7 +156,7 @@ namespace GeneticsProject
             return $"amino-acid occurs: {mostFrequent.Key} {mostFrequent.Value}";
         }
 
-        static string RLDecoding(string encoded)
+        static string RLD(string encoded)
         {
             var decoded = new StringBuilder();
             for (int i = 0; i < encoded.Length; i++)
