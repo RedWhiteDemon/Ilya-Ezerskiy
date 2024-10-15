@@ -43,7 +43,7 @@ namespace GeneticsProject
                 int counter = 0;
                 using (StreamWriter writer = new StreamWriter("genedata.txt"))
                 {
-                    writer.WriteLine("Your Name"); // Замените на ваше имя
+                    writer.WriteLine("Езерский Илья"); 
                     writer.WriteLine("Генетический поиск");
 
                     while (!reader.EndOfStream)
