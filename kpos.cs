@@ -1,185 +1,208 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
-struct GeneticData
+namespace GeneticsProject
 {
-    public string Protein;    // Название белка
-    public string Organism;   // Название организма
-    public string AminoAcids; // Цепочка аминокислот
-}
-
-class GeneticSearch
-{
-    static List<GeneticData> proteins = new List<GeneticData>(); // Список белков
-    static int commandCounter = 1; // Счётчик команд
-
-    static void Main()
+    public struct GeneticData
     {
-        // Чтение данных о белках
-        ReadSequences("sequences.txt");
-
-        // Создание выходного файла
-        using (StreamWriter output = new StreamWriter("genedata.txt"))
-        {
-            output.WriteLine("Ваше Имя"); // Ваше имя
-            output.WriteLine("Генетический поиск");
-
-            // Чтение и выполнение команд
-            ProcessCommands("commands.txt", output);
-        }
+        public string protein; // название белка
+        public string organism; // название организма
+        public string amino_acids; // цепочка аминокислот 
     }
 
-    static void ReadSequences(string filename)
+    class Program
     {
-        foreach (string line in File.ReadLines(filename))
+        static List<GeneticData> data = new List<GeneticData>();
+
+        // Метод для чтения данных о белках из файла
+        static void ReadGeneticData(string filename)
         {
-            var parts = line.Split('\t');
-            proteins.Add(new GeneticData
+            using (StreamReader reader = new StreamReader(filename))
             {
-                Protein = parts[0],
-                Organism = parts[1],
-                AminoAcids = RLDecoding(parts[2])
-            });
-        }
-    }
-
-    static void ProcessCommands(string filename, StreamWriter output)
-    {
-        foreach (string line in File.ReadLines(filename))
-        {
-            var parts = line.Split('\t');
-            string command = parts[0];
-            output.WriteLine($"---\n{commandCounter:D3}");
-
-            switch (command)
-            {
-                case "search":
-                    Search(parts[1], output);
-                    break;
-                case "diff":
-                    Diff(parts[1], parts[2], output);
-                    break;
-                case "mode":
-                    Mode(parts[1], output);
-                    break;
-            }
-
-            commandCounter++;
-        }
-    }
-
-    static void Search(string sequence, StreamWriter output)
-    {
-        bool found = false;
-        foreach (var protein in proteins)
-        {
-            if (protein.AminoAcids.Contains(sequence))
-            {
-                output.WriteLine($"{protein.Organism}\t{protein.Protein}");
-                found = true;
+                while (!reader.EndOfStream)
+                {
+                    string line = reader.ReadLine();
+                    string[] fragments = line.Split('\t');
+                    GeneticData protein;
+                    protein.protein = fragments[0];
+                    protein.organism = fragments[1];
+                    protein.amino_acids = fragments[2];
+                    data.Add(protein);
+                }
             }
         }
-        if (!found)
+
+        // Метод для выполнения команд
+        static void ReadHandleCommands(string filename)
         {
-            output.WriteLine("NOT FOUND");
-        }
-    }
-
-    static void Diff(string protein1, string protein2, StreamWriter output)
-    {
-        var p1 = proteins.FirstOrDefault(p => p.Protein == protein1);
-        var p2 = proteins.FirstOrDefault(p => p.Protein == protein2);
-
-        if (p1.Protein == null || p2.Protein == null)
-        {
-            output.Write("MISSING:");
-            if (p1.Protein == null) output.Write($" {protein1}");
-            if (p2.Protein == null) output.Write($" {protein2}");
-            output.WriteLine();
-        }
-        else
-        {
-            int differences = CalculateDifference(p1.AminoAcids, p2.AminoAcids);
-            output.WriteLine($"amino-acids difference: {differences}");
-        }
-    }
-
-    static int CalculateDifference(string seq1, string seq2)
-    {
-        int minLength = Math.Min(seq1.Length, seq2.Length);
-        int diff = Math.Abs(seq1.Length - seq2.Length);
-
-        for (int i = 0; i < minLength; i++)
-        {
-            if (seq1[i] != seq2[i]) diff++;
-        }
-        return diff;
-    }
-
-    static void Mode(string proteinName, StreamWriter output)
-    {
-        var protein = proteins.FirstOrDefault(p => p.Protein == proteinName);
-
-        if (protein.Protein == null)
-        {
-            output.WriteLine($"amino-acid occurs: MISSING: {proteinName}");
-        }
-        else
-        {
-            var mostCommon = protein.AminoAcids
-                .GroupBy(a => a)
-                .OrderByDescending(g => g.Count())
-                .ThenBy(g => g.Key)
-                .First();
-
-            output.WriteLine($"amino-acid occurs: {mostCommon.Key} {mostCommon.Count()}");
-        }
-    }
-
-    static string RLEncoding(string aminoAcids)
-    {
-        StringBuilder encoded = new StringBuilder();
-        int count = 1;
-
-        for (int i = 1; i <= aminoAcids.Length; i++)
-        {
-            if (i < aminoAcids.Length && aminoAcids[i] == aminoAcids[i - 1])
+            using (StreamReader reader = new StreamReader(filename))
             {
-                count++;
-            }
-            else
-            {
-                if (count > 2)
-                    encoded.Append(count);
-                encoded.Append(aminoAcids[i - 1]);
-                count = 1;
+                int counter = 0;
+                using (StreamWriter writer = new StreamWriter("genedata.txt"))
+                {
+                    writer.WriteLine("Your Name"); // Замените на ваше имя
+                    writer.WriteLine("Генетический поиск");
+
+                    while (!reader.EndOfStream)
+                    {
+                        string line = reader.ReadLine();
+                        counter++;
+                        string[] command = line.Split('\t');
+
+                        // Обработка команды search
+                        if (command[0].Equals("search"))
+                        {
+                            writer.WriteLine($"{counter:D3}   search   {command[1]}");
+                            int index = Search(command[1]);
+                            if (index != -1)
+                                writer.WriteLine($"{data[index].organism}    {data[index].protein}");
+                            else
+                                writer.WriteLine("NOT FOUND");
+                            writer.WriteLine("================================================");
+                        }
+
+                        // Обработка команды diff
+                        if (command[0].Equals("diff"))
+                        {
+                            writer.WriteLine($"{counter:D3}   diff   {command[1]}   {command[2]}");
+                            int diffCount = Diff(command[1], command[2]);
+                            writer.WriteLine($"amino-acids difference: {diffCount}");
+                            writer.WriteLine("================================================");
+                        }
+
+                        // Обработка команды mode
+                        if (command[0].Equals("mode"))
+                        {
+                            writer.WriteLine($"{counter:D3}   mode   {command[1]}");
+                            string mostFrequent = Mode(command[1]);
+                            writer.WriteLine(mostFrequent);
+                            writer.WriteLine("================================================");
+                        }
+                    }
+                }
             }
         }
-        return encoded.ToString();
-    }
 
-    static string RLDecoding(string encoded)
-    {
-        StringBuilder decoded = new StringBuilder();
-        int i = 0;
-
-        while (i < encoded.Length)
+        // Метод для поиска белка по последовательности аминокислот
+        static int Search(string amino_acid)
         {
-            if (char.IsDigit(encoded[i]))
+            string decoded = RLDecoding(amino_acid);
+            for (int i = 0; i < data.Count; i++)
             {
-                int count = encoded[i] - '0';
-                decoded.Append(new string(encoded[i + 1], count));
-                i += 2;
+                if (data[i].amino_acids.Contains(decoded))
+                    return i;
             }
-            else
-            {
-                decoded.Append(encoded[i]);
-                i++;
-            }
+            return -1;
         }
-        return decoded.ToString();
+
+        // Метод для вычисления различий между двумя белками
+        static int Diff(string protein1Name, string protein2Name)
+        {
+            var protein1 = data.FirstOrDefault(p => p.protein.Equals(protein1Name));
+            var protein2 = data.FirstOrDefault(p => p.protein.Equals(protein2Name));
+
+            if (string.IsNullOrEmpty(protein1.protein) || string.IsNullOrEmpty(protein2.protein))
+            {
+                var missing = new List<string>();
+                if (string.IsNullOrEmpty(protein1.protein)) missing.Add(protein1Name);
+                if (string.IsNullOrEmpty(protein2.protein)) missing.Add(protein2Name);
+                return -1; // Если один из белков не найден, вернуть -1
+            }
+
+            int diffCount = 0;
+            string amino1 = protein1.amino_acids;
+            string amino2 = protein2.amino_acids;
+
+            int length = Math.Max(amino1.Length, amino2.Length);
+            for (int i = 0; i < length; i++)
+            {
+                if (i >= amino1.Length || i >= amino2.Length || amino1[i] != amino2[i])
+                {
+                    diffCount++;
+                }
+            }
+            return diffCount;
+        }
+
+        // Метод для определения наиболее часто встречающейся аминокислоты
+        static string Mode(string proteinName)
+        {
+            var protein = data.FirstOrDefault(p => p.protein.Equals(proteinName));
+
+            if (string.IsNullOrEmpty(protein.protein))
+            {
+                return $"MISSING: {proteinName}";
+            }
+
+            var aminoCounts = new Dictionary<char, int>();
+            foreach (var amino in protein.amino_acids)
+            {
+                if (aminoCounts.ContainsKey(amino))
+                {
+                    aminoCounts[amino]++;
+                }
+                else
+                {
+                    aminoCounts[amino] = 1;
+                }
+            }
+
+            var mostFrequent = aminoCounts.OrderByDescending(pair => pair.Value)
+                                           .ThenBy(pair => pair.Key)
+                                           .First();
+
+            return $"amino-acid occurs: {mostFrequent.Key} {mostFrequent.Value}";
+        }
+
+        // Метод для кодирования аминокислот с использованием RLE
+        static string RLEncoding(string amino_acids)
+        {
+            StringBuilder encoded = new StringBuilder();
+            for (int i = 0; i < amino_acids.Length; i++)
+            {
+                char ch = amino_acids[i];
+                int count = 1;
+                while (i < amino_acids.Length - 1 && amino_acids[i + 1] == ch)
+                {
+                    count++;
+                    i++;
+                }
+                if (count > 2) encoded.Append(count).Append(ch);
+                else if (count == 1) encoded.Append(ch);
+                else if (count == 2) encoded.Append(ch).Append(ch);
+            }
+            return encoded.ToString();
+        }
+
+        // Метод для декодирования аминокислот с использованием RLE
+        static string RLDecoding(string amino_acids)
+        {
+            StringBuilder decoded = new StringBuilder();
+            for (int i = 0; i < amino_acids.Length; i++)
+            {
+                if (char.IsDigit(amino_acids[i]))
+                {
+                    char letter = amino_acids[i + 1];
+                    int count = amino_acids[i] - '0';
+                    decoded.Append(new string(letter, count)); // Добавить символ count раз
+                    i++; // Пропустить символ
+                }
+                else
+                {
+                    decoded.Append(amino_acids[i]);
+                }
+            }
+            return decoded.ToString();
+        }
+
+        // Точка входа в программу
+        static void Main(string[] args)
+        {
+            ReadGeneticData("sequences.txt");
+            ReadHandleCommands("commands.txt");
+        }
     }
 }
